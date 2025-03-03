@@ -19,23 +19,42 @@ function getSignature(payload) {
     const endpoint = `https://${host}/`;
     const amzTarget = "Textract.StartDocumentTextDetection";
 
-    const date = new Date().toISOString().replace(/[:-]|\.\d{3}/g, '');
-    const shortDate = date.substring(0, 8);
+    const now = new Date();
+    const dateISO = now.toISOString().replace(/[:-]|\.\d{3}/g, '');
+    const shortDate = dateISO.substring(0, 8);
     const credentialScope = `${shortDate}/${region}/${service}/aws4_request`;
 
-    const payloadHash = crypto.createHash('sha256').update(payload).digest('hex');
-    const stringToSign = `AWS4-HMAC-SHA256\n${date}\n${credentialScope}\n${payloadHash}`;
+    const payloadHash = crypto.createHash("sha256").update(payload).digest("hex");
 
-    const signingKey = crypto.createHmac('sha256', `AWS4${secretKey}`)
-        .update(shortDate)
-        .update(region)
-        .update(service)
-        .update('aws4_request')
-        .digest();
+    const canonicalRequest = [
+        "POST",
+        "/",
+        "",
+        "content-type:application/x-amz-json-1.1",
+        `host:${host}`,
+        `x-amz-date:${dateISO}`,
+        `x-amz-target:${amzTarget}`,
+        "",
+        "content-type;host;x-amz-date;x-amz-target",
+        payloadHash
+    ].join("\n");
 
-    const signature = crypto.createHmac('sha256', signingKey)
-        .update(stringToSign)
-        .digest('hex');
+    const stringToSign = [
+        "AWS4-HMAC-SHA256",
+        dateISO,
+        credentialScope,
+        crypto.createHash("sha256").update(canonicalRequest).digest("hex")
+    ].join("\n");
+
+    function getSignatureKey(key, dateStamp, regionName, serviceName) {
+        const kDate = crypto.createHmac("sha256", "AWS4" + key).update(dateStamp).digest();
+        const kRegion = crypto.createHmac("sha256", kDate).update(regionName).digest();
+        const kService = crypto.createHmac("sha256", kRegion).update(serviceName).digest();
+        return crypto.createHmac("sha256", kService).update("aws4_request").digest();
+    }
+
+    const signingKey = getSignatureKey(secretKey, shortDate, region, service);
+    const signature = crypto.createHmac("sha256", signingKey).update(stringToSign).digest("hex");
 
     const authorizationHeader = `AWS4-HMAC-SHA256 Credential=${accessKey}/${credentialScope}, SignedHeaders=content-type;host;x-amz-date;x-amz-target, Signature=${signature}`;
 
@@ -43,11 +62,10 @@ function getSignature(payload) {
         endpoint,
         amzTarget,
         authorizationHeader,
-        date
+        date: dateISO
     };
 }
 
-// Endpoint para gerar a assinatura
 app.post("/generate-signature", (req, res) => {
     const payload = JSON.stringify(req.body);
     const signatureData = getSignature(payload);
