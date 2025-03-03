@@ -22,6 +22,6 @@
     "cors": "^2.8.5",
     "crypto": "^1.0.1",
     "express": "^4.21.2",
-    "aws-sdk": "^2.1196.0"  // Adicionando a dependência aws-sdk corretamente
+    "aws-sdk": "^2.1196.0"
   }
 }
