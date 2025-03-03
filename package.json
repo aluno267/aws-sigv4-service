@@ -3,8 +3,8 @@
   "version": "1.0.0",
   "main": "server.js",
   "scripts": {
-  "start": "node server.js"
-},
+    "start": "node server.js"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/aluno267/aws-sigv4-service.git"
@@ -21,6 +21,7 @@
     "body-parser": "^1.20.3",
     "cors": "^2.8.5",
     "crypto": "^1.0.1",
-    "express": "^4.21.2"
+    "express": "^4.21.2",
+    "aws-sdk": "^2.1196.0"  // Adicionando a dependência aws-sdk
   }
 }
